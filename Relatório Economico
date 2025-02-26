@@ -1,0 +1,58 @@
+import requests
+from bs4 import BeautifulSoup
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+
+# Função para buscar informações na web
+def buscar_informacoes():
+    query = "Cenário econômico educação básica particular de Minas Gerais"
+    url = f"https://www.google.com/search?q={query}"
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3"
+    }
+    response = requests.get(url, headers=headers)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    
+    resultados = []
+    for g in soup.find_all('div', class_='tF2Cxc'):
+        titulo = g.find('h3').text
+        link = g.find('a')['href']
+        descricao = g.find('div', class_='IsZvec').text if g.find('div', class_='IsZvec') else ''
+        resultados.append((titulo, link, descricao))
+    
+    return resultados
+
+# Função para gerar o relatório em PDF
+def gerar_relatorio_pdf(resultados, filename="Z:\Controladoria e Planejamento Financeiro\Projeto Relatório Econômico\\relatorio_educacao.pdf"):
+    doc = SimpleDocTemplate(filename, pagesize=letter)
+    styles = getSampleStyleSheet()
+    Story = []
+    
+    # Título do relatório
+    titulo = Paragraph("Relatório: Cenário Econômico da Educação Básica Particular em Minas Gerais", styles['Title'])
+    Story.append(titulo)
+    Story.append(Spacer(1, 12))
+    
+    # Adicionar os resultados ao relatório
+    for titulo, link, descricao in resultados:
+        p_titulo = Paragraph(f"<b>{titulo}</b>", styles['Heading2'])
+        p_link = Paragraph(f"<a href='{link}'>{link}</a>", styles['Normal'])
+        p_descricao = Paragraph(descricao, styles['BodyText'])
+        Story.append(p_titulo)
+        Story.append(p_link)
+        Story.append(p_descricao)
+        Story.append(Spacer(1, 12))
+    
+    # Criar o PDF
+    doc.build(Story)
+
+# Função principal
+def main():
+    resultados = buscar_informacoes()
+    gerar_relatorio_pdf(resultados)
+    print("Relatório gerado com sucesso!")
+
+if __name__ == "__main__":
+    main()
